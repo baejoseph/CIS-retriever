@@ -5,16 +5,19 @@ from rag_pipeline import (
     ProcessorConfig, RetrievalConfig, CosineSimilarity
 )
 from parser import DocumentParser
-from typing import List
-from datetime import datetime
 from dotenv import load_dotenv
 import os
+import json
 import boto3
+from log_time import ProcessTimer
+from helpers import load_config
+
+pt = ProcessTimer()
 
 load_dotenv()
 
 # === Streamlit Setup ===
-st.set_page_config(page_title="RAG Chat MVP", layout="wide")
+st.set_page_config(page_title="CIS Benchmarks Retrieval", layout="wide")
 st.title("🔍📚 Retrieval-Augmented Chatbot (MVP)")
 
 api_key = os.environ["OPENAI_API_KEY"]
@@ -32,10 +35,14 @@ if "corpus" not in st.session_state:
 
 if "base_services" not in st.session_state:
     with st.spinner("Initializing LLM..."):
-        embedding_service = OpenAIEmbeddingService(api_key)
-        generation_service = OpenAIGenerationService(api_key)
+        embedding_service = OpenAIEmbeddingService(api_key, load_config('embedding_model'))
+        generation_service = OpenAIGenerationService(api_key, load_config('inference_model'))
         similarity_metric = CosineSimilarity()
-        retrieval_service = RetrievalService(st.session_state.corpus, similarity_metric)
+        retrieval_service = RetrievalService(
+            st.session_state.corpus, 
+            similarity_metric,
+            load_config('reranker_model')
+            )
         augmenter = PromptAugmenter('rag_prompt.md')
         s3_client = boto3.client(
                 "s3",
@@ -53,40 +60,63 @@ if "base_services" not in st.session_state:
         }
     st.success(f"LLM initialized: {generation_service.model}", icon="✅")
 
-# === File Upload ===
+# === Pre-processed PDFs Selector ===
 st.sidebar.markdown("---")
-st.sidebar.subheader("📄 Upload docx file")
-uploaded_files = st.sidebar.file_uploader("Upload a docx file (<2MB)", type="docx", accept_multiple_files=True)
+st.sidebar.subheader("📄 Select Documents")
 
-for uploaded_file in uploaded_files:
-    if uploaded_file and uploaded_file.size < 2 * 1024 * 1024:
-        st.sidebar.success(f"Uploaded: {uploaded_file.name}")
-        with st.spinner("Parsing document..."):
-            parser = DocumentParser(st.session_state.base_services["embedding_service"],
-                                    st.session_state.base_services["s3_client"],
-                                    bucket_name,)
-            new_chunks = parser.parse_docx(uploaded_file)
-        st.sidebar.success("Document parsed successfully", icon="✅")
+s3 = st.session_state.base_services["s3_client"]
+bucket = bucket_name
 
-        # Add chunks and get count of newly added ones
-        added_count = st.session_state.corpus.add_chunks(new_chunks)
-        
-        if added_count > 0:
-            st.sidebar.success(f"Added {added_count} new chunks to corpus")
-        else:
-            st.sidebar.info("No new chunks added (document already in corpus)")
-        
-        total_chunks = len(st.session_state.corpus.get_all_chunks())
-        st.sidebar.info(f"Total chunks in corpus: {total_chunks}")
+# 1. List all metadata JSONs
+res = s3.list_objects_v2(Bucket=bucket)
+keys = [o["Key"] for o in res.get("Contents", []) if o["Key"].endswith("_md_meta.json")]
 
-    elif uploaded_file:
-        st.sidebar.error("File too large. Please upload files under 2MB.")
+# 2. Read titles
+titles = {}
+hashes = []
+for key in keys:
+    hash_ = key.removesuffix("_md_meta.json")
+    hashes.append(hash_)
+    body = s3.get_object(Bucket=bucket, Key=key)["Body"].read()
+    meta = json.loads(body)
+    titles[hash_] = meta.get("title", hash_)
+
+# 3. Render with big 📄 + checkbox
+selected = []
+for h in hashes:
+    col1, col2 = st.sidebar.columns([4, 1])
+    col1.markdown(
+        f"<span style='font-size:1.5rem'>📄</span>  **{titles[h]}**",
+        unsafe_allow_html=True,
+    )
+    if col2.checkbox("", key=f"doc_{h}"):
+        selected.append(h)
+
+# 4. Mutate the corpus in place
+corpus = st.session_state.corpus
+corpus.clear()
+
+added = 0
+for h in selected:
+    chunks_key = f"{h}_chunks_embedded.json"
+    dicts = json.loads(
+        s3.get_object(Bucket=bucket, Key=chunks_key)["Body"].read().decode('utf-8')
+    )
+    chunks = [DocumentParser._reconstruct_chunk_from_dict(dic) for dic in dicts]
+    added += corpus.add_chunks(chunks)
+
+# 5. Feedback
+if selected:
+    st.sidebar.success(f"Loaded {added} chunks from {len(selected)} doc(s)", icon="✅")
+else:
+    st.sidebar.info("No documents selected; corpus is empty.")
+st.sidebar.info(f"Total chunks in corpus: {len(corpus.get_all_chunks())}")
 
 # === Retrieval Configuration ===
 st.sidebar.markdown("---")
 st.sidebar.subheader("🔧 Retrieval Settings")
 top_k = st.sidebar.slider("Top K Chunks", 1, 10, 3)
-similarity_threshold = st.sidebar.slider("Similarity Threshold", 0.0, 1.0, 0.42)
+similarity_threshold = st.sidebar.slider("Similarity Threshold", 0.0, 1.0, 0.32)
 
 # === Chat Input ===
 user_input = st.chat_input("Ask a question...")
@@ -110,7 +140,9 @@ if user_input and api_key:
             config=current_config
         )
         
+        pt.mark("RAG Processing Query")
         response = processor.process_query(user_input)
+        pt.mark("RAG Processing Query")
         st.session_state.chat_history.append({"user": user_input, "bot": response})
 
 # === Display Chat ===

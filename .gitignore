@@ -5,4 +5,4 @@ logs/
 !logs/.gitkeeptmp/
 tmp/
 temp/
-rag-lite/__pycache__/
+src/__pycache__/
