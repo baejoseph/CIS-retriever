@@ -1,0 +1,102 @@
+# List of end-to-end retrieval test cases
+# Each entry pairs a question with the exact sections expected in the top-K results.
+
+- question: "What role does machine learning play in predicting molecular interactions for drug discovery?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "1.1"
+
+- question: "What are the main data quality issues affecting AI in drug discovery?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "1.2"
+
+- question: "How does Shor’s algorithm impact current cryptographic systems?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "2.1"
+
+- question: "What infrastructure challenges arise when transitioning to quantum-resistant cryptography?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "2.2"
+
+- question: "How does base editing improve the safety of CRISPR gene editing?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "3.1"
+
+- question: "What ethical concerns are associated with CRISPR embryo editing?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "3.2"
+
+- question: "How do solid-state batteries compare to lithium-ion batteries for renewable energy storage?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "4.1"
+
+- question: "What role does AI play in optimizing grid-scale energy storage systems?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "4.2"
+
+- question: "How does sensor fusion enhance navigation in autonomous vehicles?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "5.1"
+
+- question: "What are the benefits of using gold nanoparticles in medical diagnostics?"
+  expected_sections:
+    - file_name: "ragtest02.docx"
+      section_number: "6.2"
+
+- question: "What Enlightenment principle is central to the Declaration of Independence’s opening lines?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "1.1"
+
+- question: "Why did Parisians target the Bastille on July 14, 1789?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "1.2"
+
+- question: "What event marked the beginning of the Haitian Revolution in 1791?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "2.1"
+
+- question: "On what date did Venezuela formally declare independence, and what influenced its language?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "2.2"
+
+- question: "How did Napoleon use feigned weakness at Austerlitz, and what was the result?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "3.1"
+
+- question: "What tactical factors led to Wellington’s victory at Waterloo on June 18, 1815?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "3.2"
+
+- question: "What action by Lin Zexu in 1839 triggered the First Opium War?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "4.1"
+
+- question: "List two key provisions of the 1842 Treaty of Nanking."
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "4.2"
+
+- question: "What did the British Abolition of the Slave Trade Act of 1807 prohibit, and how was it enforced?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "5.1"
+
+- question: "What was the apprenticeship system established by the Slavery Abolition Act 1833, and when was it fully terminated?"
+  expected_sections:
+    - file_name: "ragtest03.docx"
+      section_number: "5.2"

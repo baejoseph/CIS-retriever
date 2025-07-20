@@ -1,0 +1,8 @@
+local_cache/
+.venv/
+.env
+logs/
+!logs/.gitkeeptmp/
+tmp/
+temp/
+rag-lite/__pycache__/

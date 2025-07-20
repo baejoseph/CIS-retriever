@@ -1,0 +1,3 @@
+inference_model: "deepseek-r1:latest"
+embedding_model: "mxbai-embed-large" #"nomic-embed-text"
+reranker_model: "BAAI/bge-reranker-large"
