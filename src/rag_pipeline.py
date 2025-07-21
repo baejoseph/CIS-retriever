@@ -260,7 +260,7 @@ class RetrievalService:
                         rc.chunk.metadata.section_number, rc.similarity_score)
         
         # pass to reranker if configured
-        if self.reranker_model:
+        if self.reranker_model and len(results)>1:
             results = self.rerank_with_bge(query.text, results, top_n=config.top_k)
         
         return results
@@ -342,7 +342,10 @@ class QueryProcessor:
         retrieved_chunks = self.retrieval_service.retrieve_similar_chunks(
             query, self.config.retrieval
         )
-        augmented_prompt = self.prompt_augmenter.augment_query(query, retrieved_chunks)
+        if retrieved_chunks:
+            augmented_prompt = self.prompt_augmenter.augment_query(query, retrieved_chunks)
+        else:
+            augmented_prompt = query_text
         logger.info("Augmented prompt: %s", augmented_prompt)
         return augmented_prompt
 
@@ -352,7 +355,11 @@ class QueryProcessor:
         Returns generated response.
         """
         augmented_prompt = self.pre_gen_process(query_text)
-        response = self.generation_service.generate_response(augmented_prompt)
+        if augmented_prompt == query_text:
+            response = "You query is unrelated to the subject in corpus. "
+            response += "Would you like to make another query?"
+        else:
+            response = self.generation_service.generate_response(augmented_prompt)
         logger.info("Query processing completed")
         logger.info("Response: %s", response)
         return response
