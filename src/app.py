@@ -119,7 +119,7 @@ for h in hashes:
         f"<span style='font-size:1.5rem'>📄</span>  **{titles[h]}**",
         unsafe_allow_html=True,
     )
-    if col2.checkbox("", key=f"doc_{h}"):
+    if col2.checkbox("", value=True,key=f"doc_{h}"):
         selected.append(h)
 
 # 4. Mutate the corpus in place
