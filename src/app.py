@@ -5,6 +5,8 @@ from rag_pipeline import (
     ProcessorConfig, RetrievalConfig, CosineSimilarity
 )
 from parser import DocumentParser
+from hashlib import sha256
+from PIL import Image
 from dotenv import load_dotenv
 import os
 import json
@@ -18,13 +20,41 @@ load_dotenv()
 
 # === Streamlit Setup ===
 st.set_page_config(page_title="CIS Benchmarks Retrieval", layout="wide")
-st.title("🔍📚 Retrieval-Augmented Chatbot (MVP)")
+jd_logo = "images/jd-logo.png"
+logo_white = "images/logo-white.png"
+
+st.logo(jd_logo, size="large", link="https://jdfortress.com", icon_image=logo_white)
+
+st.title("CIS Benchmarks RAG (Demo)")
 
 api_key = os.environ["OPENAI_API_KEY"]
 aws_access_key_id = os.getenv("AWS_ACCESS_KEY_ID")
 aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 aws_region = os.getenv("AWS_REGION")
 bucket_name = os.getenv("AWS_S3_BUCKET")
+
+# Simple hardcoded auth
+USER = os.getenv("DEMO_USERNAME")
+PASSWORD = os.getenv("DEMO_PASSWORD")
+
+def check_password():
+    def password_entered():
+        if sha256((st.session_state["username"] + st.session_state["password"]).encode()).hexdigest() == sha256((USER+PASSWORD).encode()).hexdigest():
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't store password
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        st.text_input("Username", value="", key="username")
+        st.text_input("Password", type="password", on_change=password_entered, key="password")
+        st.stop()
+    elif not st.session_state["password_correct"]:
+        st.error("❌ Incorrect password")
+        st.stop()
+
+check_password()
+
 
 # === Session State Initialization ===
 if "chat_history" not in st.session_state:
@@ -62,7 +92,7 @@ if "base_services" not in st.session_state:
 
 # === Pre-processed PDFs Selector ===
 st.sidebar.markdown("---")
-st.sidebar.subheader("📄 Select Documents")
+st.sidebar.subheader("🗃️ Select Documents")
 
 s3 = st.session_state.base_services["s3_client"]
 bucket = bucket_name
