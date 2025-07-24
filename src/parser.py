@@ -5,8 +5,6 @@ import hashlib
 from typing import List, Dict, Any, Tuple, Optional
 from datetime import datetime
 
-from docx import Document as DocxDocument
-
 from pathlib import Path
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
